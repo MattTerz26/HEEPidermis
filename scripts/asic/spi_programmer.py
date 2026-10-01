@@ -3,6 +3,8 @@ SPI programmer for HEEPidermis.
 
 Parses an ELF executable and programs its loadable memory regions through
 the HEEPidermis SPI slave interface.
+
+Now resets CPU to Boot ROM, programs SRAM, and optionally starts the CPU at the ELF entry point.
 """
 
 import argparse
@@ -145,6 +147,44 @@ class HeepProgrammer:
         raise TimeoutError(
             f"Timed out waiting for Pico response "
             f"at 0x{address:08X}"
+        )
+
+    def _expect_reset_ok(self):
+        """
+        Wait for the final response to the Pico 'X' command.
+
+        When RESET_DEBUG is enabled in the Pico firmware, intermediate
+        diagnostic lines are printed before the final OK / ERR_RESET.
+        """
+        deadline = time.monotonic() + REPLY_TIMEOUT_S
+
+        while time.monotonic() < deadline:
+            reply = self._read_line(deadline)
+
+            if reply is None:
+                break
+
+            # The banner can race with the first command after opening USB.
+            if reply == READY_BANNER:
+                continue
+
+            if reply == b"OK":
+                return
+
+            if reply.startswith(b"ERR"):
+                raise RuntimeError(
+                    "Pico CPU reset failed: "
+                    f"{reply.decode(errors='replace')}"
+                )
+
+            # Preserve Pico-side RESET_DEBUG output for diagnostics.
+            print(
+                f"Pico: "
+                f"{reply.decode(errors='replace')}"
+            )
+
+        raise TimeoutError(
+            "Timed out waiting for Pico CPU reset response"
         )
 
     def write(self, address, data):
@@ -290,6 +330,27 @@ class HeepProgrammer:
             struct.pack("<I", value)
         )
 
+    def reset_cpu_to_bootrom(self):
+            """
+            Ask the Pico firmware to reset only the CPU domain and leave the CPU
+            waiting in Boot ROM.
+    
+            Pico protocol:
+                'X'
+            """
+            # Discard stale serial text before issuing the command.
+            self.ser.reset_input_buffer()
+    
+            written = self.ser.write(b"X")
+            self.ser.flush()
+    
+            if written != 1:
+                raise IOError(
+                    f"Short serial write: sent {written}/1 bytes"
+                )
+    
+            self._expect_reset_ok()
+    
     def run(self, entry):
         print(
             f"Setting boot address to 0x{entry:08X}"
@@ -690,6 +751,12 @@ def main():
         ),
     )
 
+    parser.add_argument(
+        "--no-reset",
+        action="store_true",
+        help="Do not reset the CPU to Boot ROM before programming",
+    )
+
     args = parser.parse_args()
 
     entry, regions = load_elf(
@@ -740,6 +807,16 @@ def main():
     )
 
     try:
+        if not args.no_reset:
+            print(
+                "Resetting CPU to Boot ROM ..."
+            )
+
+            programmer.reset_cpu_to_bootrom()
+
+            print(
+                "CPU is waiting in Boot ROM"
+            )
         written = 0
 
         for address, data in regions:
