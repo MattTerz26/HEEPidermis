@@ -133,7 +133,7 @@ endif
 
 
 # Conda environemnt variables
-REQS_XHEEP 	:= hw/vendor/x-heep/util/python-requirements.txt
+REQS_XHEEP 	:= hw/vendor/x-heep/python-requirements.txt
 REQS_CHEEP 	:= util/cheep-python-requirements.txt
 ENV_NAME 	:= heepidermis
 
