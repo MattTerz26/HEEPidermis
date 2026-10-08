@@ -512,4 +512,5 @@ export EXTERNAL_DOMAINS
 export FLASHWRITE_FILE
 export HEEP_DIR = $(ROOT_DIR)/hw/vendor/x-heep
 XHEEP_MAKE 		= $(HEEP_DIR)/external.mk
+include $(ROOT_DIR)/sw/arduino/spi.mk
 include $(XHEEP_MAKE)
