@@ -12,9 +12,9 @@
 #define PIN_SCK 18
 #define PIN_MOSI 19
 
-#define PIN_LED_SERIAL 14
-#define PIN_LED_SPI_WRITE 15
-#define PIN_LED_SPI_READ 13
+#define PIN_LED_SERIAL 13
+#define PIN_LED_SPI_WRITE 14
+#define PIN_LED_SPI_READ 15
 
 #define PIN_ASIC_CLK 21  // GPIO21 = GPOUT0
 
