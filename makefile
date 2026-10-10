@@ -62,7 +62,8 @@ DPI_CINC			:= -I$(dir $(shell which verilator))../share/verilator/include/vltstd
 
 # Simulation configuration
 LOG_LEVEL			?= LOG_FULL
-BOOT_MODE			?= force # jtag: wait for JTAG (default), flash: boot from flash, force: load firmware into SRAM
+#  Default boot mode: jtag: wait for JTAG (default), flash: boot from flash, force: load firmware into SRAM
+BOOT_MODE			?= force
 FIRMWARE			?= $(ROOT_DIR)/build/sw/app/main.hex
 LINKER 				?= on_chip
 ifeq ($(BOOT_MODE), jtag)
@@ -75,7 +76,8 @@ else
 FIRMWARE			= $(ROOT_DIR)/build/sw/app/main.hex
 LINKER 				= flash_load
 endif
-VCD_MODE			?= 0 # QuestaSim-only - 0: no dump, 1: dump always active, 2: dump triggered by GPIO 0
+VCD_MODE			?= 0
+# QuestaSim-only - 0: no dump, 1: dump always active, 2: dump triggered by GPIO 0
 MAX_CYCLES			?= 100000000
 FUSESOC_FLAGS		?=
 FUSESOC_ARGS		?=
