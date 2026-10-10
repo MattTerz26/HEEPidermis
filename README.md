@@ -229,110 +229,11 @@ Testing... we seem to have a bug on the main board that prevents this from worki
 
 ### Programming through SPI
 
-HEEPidermis can be programmed directly into SRAM through its SPI slave interface using an external microcontroller. The current implementation uses a Raspberry Pi Pico, which also provides an optional configurable system clock.
+HEEPidermis supports SRAM programming through its SPI slave interface using a Raspberry Pi Pico. The Pico also provides a configurable external system clock.
 
-The programming tools are located in [`sw/arduino/`](./sw/arduino/):
+The system supports operation from the ASIC's internal VCOp oscillator, allowing the external clock to be disconnected after initialization.
 
-- `heep_programmer/heep_programmer.ino`: microcontroller firmware for SPI transactions, CPU reset, memory readback, and clock generation.
-- `heep_sdk.py`: Python SDK implementing the communication protocol and ELF programming.
-- `heep_cli.py`: command-line interface built on top of the SDK.
-- `spi.mk`: Makefile targets for programming and controlling the ASIC.
-
-#### Setup
-
-Flash `heep_programmer.ino` onto the Raspberry Pi Pico using the Arduino IDE. The current pin assignments are:
-
-| Pico GPIO | Function |
-|---|---|
-| GP16 | SPI MISO |
-| GP17 | SPI CS |
-| GP18 | SPI SCK |
-| GP19 | SPI MOSI |
-| GP21 | ASIC system clock output |
-| GP14 / GP15 / GP13 | Serial / SPI-write / SPI-read activity LEDs |
-
-Connect the signals to the appropriate ASIC board interfaces, ensuring compatible logic levels and a common ground.
-
-The host requires Python with `pyserial` and `pyelftools`. Activate the HEEPidermis environment before proceeding.
-
-From the repository root, list available serial ports and configure the external programmer:
-
-```bash
-make spi-ports
-make spi-port PORT=/dev/ttyACM0
-```
-
-The selected port is saved locally in `sw/arduino/.spi-port`. It can also be overridden per command using `SPI_PORT=/dev/ttyACM1`.
-
-#### System clock control
-
-The Pico can generate the ASIC system clock through GPIO21. With `CLOCK_ON_AT_STARTUP=0`, the clock is disabled at startup, and GPIO21 is driven LOW.
-
-```bash
-make spi-clock-status
-make spi-clock-set CLK_FREQ=1000000
-make spi-clock-on
-make spi-clock-off
-```
-
-The frequency is expressed in Hz. By default, frequency changes are prohibited while the clock is running. This behavior is controlled by `ALLOW_LIVE_CLOCK_FREQUENCY_CHANGE` in the Arduino firmware.
-
-**Note:** This controls the ASIC system clock, not the SPI communication frequency. The SDK does not automatically enable the system clock before programming.
-
-#### Compiling and programming an application
-
-First, compile the application for on-chip SRAM execution:
-
-```bash
-make app PROJECT=<application_name> BOOT_MODE=force
-```
-
-The resulting ELF file is normally located at `sw/build/main.elf`.
-
-When the Pico supplies the ASIC system clock, enable it before accessing the chip:
-
-```bash
-make spi-clock-on
-```
-
-Program the application:
-
-```bash
-make spi-program
-```
-
-Optional arguments enable memory verification and application execution:
-
-```bash
-make spi-program verify
-make spi-program run
-make spi-program verify run
-```
-
-By default, the programmer resets the CPU to Boot ROM before loading the ELF into SRAM. Verification reads the programmed memory back through SPI and compares it byte-for-byte against the expected image. If `run` is specified, the CPU starts executing from the ELF entry point after programming and optional verification.
-
-A different ELF can be selected using:
-
-```bash
-make spi-program SPI_ELF=path/to/application.elf verify run
-```
-
-CPU reset can also be triggered independently:
-
-```bash
-make spi-reset
-```
-
-This resets the CPU domain through the power-manager registers; it does not power-cycle or reset the entire board.
-
-The `no-reset` modifier is available for advanced use:
-
-```bash
-make spi-program no-reset
-```
-
-It should only be used when the CPU state is already controlled, since a running application could modify SRAM during programming or verification.
-
+For hardware connections, programming commands, clock configuration, VCO-based clock operation, and troubleshooting, see the **[SPI Programmer and Clock Configuration Guide](./sw/arduino/README.md)**.
 
 ## RTL Simulation
 
