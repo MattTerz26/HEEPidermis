@@ -9,7 +9,7 @@
 #include "soc_ctrl.h"
 
 #define VCO_FS_HZ 1
-#define SYS_FCLK_HZ 1000000
+#define SYS_FCLK_HZ 740000
 #define VCO_UPDATE_CC (SYS_FCLK_HZ/VCO_FS_HZ)
 
 #define VCO_SUPPLY_FROM_LDO 1
@@ -122,11 +122,17 @@ int main() {
     timer_start();
 
     while(1){
+        // Force a new sample and gives the decoder time to update its registers
+        VCO_trigger();
+        for (volatile uint32_t j = 0; j < 100; j++) {
+            asm volatile("nop");
+        }
+
         coarse_p    = VCOp_get_coarse();
-        diff_p      =  coarse_p - last_coarse_p;
+        diff_p      =  (coarse_p - last_coarse_p) & 0x03FFFFFFu;
         #if PSEUDO_DIFF_MODE
         coarse_n    = VCOn_get_coarse();
-        diff_n      =  coarse_n - last_coarse_n;
+        diff_n      =  (coarse_n - last_coarse_n) & 0x03FFFFFFu;
         count       = VCO_get_count();
 
         diff        = diff_n - diff_p;
@@ -162,7 +168,7 @@ int main() {
 
             i++;
         }else{
-            printf("\nSkipped");
+            printf("\nSkipped: P=%u N=%u diff=%u", coarse_p, coarse_n, diff_p);
         }
 
         last_coarse_p   = coarse_p;
