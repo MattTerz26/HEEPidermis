@@ -375,12 +375,6 @@ endif
 $(PARAMS):
 	@echo "### Rebuilding software..."
 	
-## Compile VCO clock initialization application
-.PHONY: VCO_clock
-
-VCO_clock:
-	$(MAKE) app PROJECT=VCO_clock_init BOOT_MODE=force
-
 ## @section Utilities
 
 ## Check if the firmware is compiled

@@ -30,6 +30,9 @@ RAM_SIZE = 0x00008000
 SOC_CTRL_BASE = 0x20000000
 BOOT_EXIT_LOOP = SOC_CTRL_BASE + 0x0C
 BOOT_ADDRESS = SOC_CTRL_BASE + 0x10
+# config/cheep_configs.hjson: AO external peripherals + VCO decoder + ENABLE.
+VCO_ENABLE = 0x20070000 + 0x1000 + 0x0C
+VCOP_ENABLE_MASK = 1 << 0
 
 MAX_TRANSFER = 512
 DEFAULT_CHUNK_SIZE = 512
@@ -285,6 +288,25 @@ class HEEPidermis:
         # Match the existing programmer's reset behavior.
         self.ser.reset_input_buffer()
         self._expect(b"X", b"OK", "reset_cpu_to_bootrom")
+
+    def enable_vcop(self) -> int:
+        """Enable VCOp over SPI and verify ENABLE; requires a working ASIC clock.
+
+        Call with the CPU waiting in Boot ROM so firmware cannot race the
+        read-modify-write. Does not reset the CPU or switch clock sources.
+        An already enabled oscillator is never toggled off.
+        """
+        before = self.read_u32(VCO_ENABLE)
+        expected = before | VCOP_ENABLE_MASK
+        if expected != before:
+            self.write_u32(VCO_ENABLE, expected)
+        actual = self.read_u32(VCO_ENABLE)
+        if actual != expected:
+            raise PicoProtocolError(
+                f"VCOp ENABLE verification failed at 0x{VCO_ENABLE:08X}: "
+                f"expected 0x{expected:08X}, read 0x{actual:08X}"
+            )
+        return actual
 
     def reset(self) -> None:
         """Alias for reset_cpu_to_bootrom()."""

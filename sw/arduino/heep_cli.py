@@ -41,6 +41,7 @@ def build_parser():
     freq_cmd.add_argument("hz", type=int)
 
     commands.add_parser("reset", help="Reset ASIC CPU domain to Boot ROM")
+    commands.add_parser("vco-enable", help="Enable VCOp over SPI and verify (CPU must be in Boot ROM)")
 
     program = commands.add_parser("program", help="Program a RISC-V ELF into SRAM")
     program.add_argument("elf", nargs="?", type=Path, default=DEFAULT_ELF,
@@ -78,6 +79,9 @@ def execute(args):
             elif args.clock_action == "set":
                 actual = heep.clock_set_frequency(args.hz)
                 print(f"ASIC clock configured to {actual} Hz")
+        elif args.command == "vco-enable":
+            value = heep.enable_vcop()
+            print(f"VCOp enabled; ENABLE readback: 0x{value:08X}")
         elif args.command == "reset":
             heep.reset()
             print("CPU reset to Boot ROM")

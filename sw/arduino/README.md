@@ -104,7 +104,7 @@ make spi-program no-reset
 
 It should only be used when the CPU state is already controlled, since a running application could modify SRAM during programming or verification.
 
-## Heep Programmer functions and debugging
+## SPI Programmer functions and debugging
 
 The SPI programmer also supports direct access to the ASIC's memory and memory-mapped registers. This is particularly useful for debugging, as it allows reading and writing individual 32-bit words without compiling or uploading a new application.
 
@@ -176,24 +176,21 @@ Start with the Raspberry Pi Pico providing the system clock (1 MHz):
 
 ```bash
 make programmer-clock-on
+make spi-reset
 make VCO_clock
-make spi-program run
 ```
 
-`make VCO_clock` compiles the dedicated `VCO_clock_init` application with `BOOT_MODE=force`. This application enables VCOp and leaves it running continuously.
-
-Do not compile the initialization application with `VCO_IS_SYSCLK`, since it must enable VCOp for the first time.
+`make VCO_clock` enables VCOp directly through SPI and verifies the ENABLE register at `0x2007100C`. It preserves VCOn and leaves an already enabled VCOp running without toggling it. No initialization application is compiled, uploaded, or executed. Keep the CPU in Boot ROM during this operation to avoid concurrent register changes. Register readback confirms the enable setting; check the physical VCO output before switching clocks.
 
 **2. Switch to the VCO clock**
 
 Once the VCO output is stable:
 
 ```bash
-make spi-reset
 make programmer-clock-off
 ```
 
-The SPI CPU-domain reset returns the processor to Boot ROM without resetting the VCO configuration.
+The CPU is already waiting in Boot ROM from step 1. CPU-domain resets preserve the VCO configuration.
 
 **Physically switch** the ASIC clock input from the Pico-generated clock to the VCOp output. The ASIC can now run from its internal oscillator.
 
@@ -228,4 +225,4 @@ The default SPI programming reset only resets the CPU domain, preserving the run
 - The VCO clock configuration is retained across the tested CPU-domain reset, **not** across power cycling or a full hardware reset.
 - All SPI logic levels must remain compatible; the tested setup uses discrete level shifting for the ASIC-to-Pico MISO signal. -->
 
-**Validation:** The clock handover and subsequent SPI programming with VCOp supplying the system clock have been demonstrated on the HEEPidermis hardware.
+**Validation:** The previous firmware-based clock handover and subsequent SPI programming were demonstrated on hardware. The direct SPI enable path requires hardware validation; register readback alone does not verify oscillation.

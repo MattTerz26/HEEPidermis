@@ -20,6 +20,12 @@ SPI_CLI := $(ROOT_DIR)/sw/arduino/heep_cli.py
 CLK_FREQ ?= 1000000
 SPI_ELF ?= $(ROOT_DIR)/sw/build/main.elf
 
+## Enable VCOp directly through SPI; external clock required, CPU in Boot ROM.
+## Verifies register readback; does not load firmware or switch clock sources.
+.PHONY: VCO_clock
+VCO_clock:
+	$(SPI_PYTHON) $(SPI_CLI) --port "$(SPI_PORT)" vco-enable
+
 # Lowercase Make goals are optional modifiers: 'make spi-program verify run'.
 SPI_VERIFY_OPT = $(if $(filter verify,$(MAKECMDGOALS)),--verify,)
 SPI_RUN_OPT = $(if $(filter run,$(MAKECMDGOALS)),--run,)
