@@ -6,9 +6,9 @@
 # Examples:
 #   make spi-ports
 #   make spi-port PORT=/dev/ttyACM1
-#   make spi-clock-status
-#   make spi-clock-set CLK_FREQ=10000000
-#   make spi-clock-on
+#   make programmer-clock-status
+#   make programmer-clock-set CLK_FREQ=10000000
+#   make programmer-clock-on
 #   make spi-program verify run
 #
 # The clock is never implicitly enabled by these targets.
@@ -25,7 +25,7 @@ SPI_VERIFY_OPT = $(if $(filter verify,$(MAKECMDGOALS)),--verify,)
 SPI_RUN_OPT = $(if $(filter run,$(MAKECMDGOALS)),--run,)
 SPI_NO_RESET_OPT = $(if $(filter no-reset,$(MAKECMDGOALS)),--no-reset,)
 
-.PHONY: spi-ports spi-port spi-clock-status spi-clock-on spi-clock-off spi-clock-set spi-reset spi-program verify run no-reset
+.PHONY: spi-ports spi-port programmer-clock-status programmer-clock-on programmer-clock-off programmer-clock-set spi-reset spi-program verify run no-reset
 
 ## List serial ports currently visible to the host.
 spi-ports:
@@ -42,19 +42,19 @@ spi-port:
 	fi
 
 ## Report ASIC clock state and frequency.
-spi-clock-status:
+programmer-clock-status:
 	$(SPI_PYTHON) $(SPI_CLI) --port "$(SPI_PORT)" clock status
 
 ## Turn ASIC clock on at its previously configured frequency.
-spi-clock-on:
+programmer-clock-on:
 	$(SPI_PYTHON) $(SPI_CLI) --port "$(SPI_PORT)" clock on
 
 ## Turn ASIC clock off and drive GPIO21 LOW.
-spi-clock-off:
+programmer-clock-off:
 	$(SPI_PYTHON) $(SPI_CLI) --port "$(SPI_PORT)" clock off
 
-## Set ASIC clock frequency while OFF. Example: make spi-clock-set SPI_CLK_FREQ=2000000
-spi-clock-set:
+## Set ASIC clock frequency while OFF. Example: make programmer-clock-set SPI_CLK_FREQ=2000000
+programmer-clock-set:
 	$(SPI_PYTHON) $(SPI_CLI) --port "$(SPI_PORT)" clock set "$(CLK_FREQ)"
 
 ## Reset the ASIC CPU domain to Boot ROM (not the whole board).

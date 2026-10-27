@@ -40,10 +40,10 @@ The selected port is saved locally in `sw/arduino/.spi-port`. It can also be ove
 The Pico can generate the ASIC system clock through GPIO21. With `CLOCK_ON_AT_STARTUP=0`, the clock is disabled at startup, and GPIO21 is driven LOW.
 
 ```bash
-make spi-clock-status
-make spi-clock-set CLK_FREQ=1000000
-make spi-clock-on
-make spi-clock-off
+make programmer-clock-status
+make programmer-clock-set CLK_FREQ=1000000
+make programmer-clock-on
+make programmer-clock-off
 ```
 
 The frequency is expressed in Hz. By default, frequency changes are prohibited while the clock is running. This behavior is controlled by `ALLOW_LIVE_CLOCK_FREQUENCY_CHANGE` in the Arduino firmware.
@@ -63,7 +63,7 @@ The resulting ELF file is normally located at `sw/build/main.elf`.
 When the Pico supplies the ASIC system clock, enable it before accessing the chip:
 
 ```bash
-make spi-clock-on
+make programmer-clock-on
 ```
 
 Program the application:
@@ -104,6 +104,68 @@ make spi-program no-reset
 
 It should only be used when the CPU state is already controlled, since a running application could modify SRAM during programming or verification.
 
+## Heep Programmer functions and debugging
+
+The SPI programmer also supports direct access to the ASIC's memory and memory-mapped registers. This is particularly useful for debugging, as it allows reading and writing individual 32-bit words without compiling or uploading a new application.
+
+These operations are exposed through `heep_cli.py`, which communicates with the Raspberry Pi Pico running `heep_programmer.ino`.
+
+All commands below are executed from the repository root.
+
+### Reading and writing 32-bit words
+
+To read a 32-bit word from a given address:
+
+```bash
+python3 sw/arduino/heep_cli.py read32 0xEFC
+```
+
+The command returns the address and its contents in hexadecimal:
+
+```text
+0x00000EFC: 0x557D8082
+```
+
+To write a 32-bit value to an address:
+
+```bash
+python3 sw/arduino/heep_cli.py write32 0xEFC 0x557D8082
+```
+
+The programmer confirms that the write transaction was issued:
+
+```text
+0x00000EFC <- 0x557D8082
+```
+
+A write acknowledgement does not guarantee that the target memory or register retained the value. To verify the operation, read the address again:
+
+```bash
+python3 sw/arduino/heep_cli.py read32 0xEFC
+```
+
+Both addresses and values can be specified in hexadecimal (`0x...`) or decimal. Addresses must be 4-byte aligned, and write values must fit in an unsigned 32-bit word.
+
+### Serial port selection
+
+By default, the CLI uses `/dev/ttyACM0`. A different port can be specified with `--port`:
+
+```bash
+python3 sw/arduino/heep_cli.py --port /dev/ttyACM1 read32 0xEFC
+```
+
+Unlike the Makefile commands, direct CLI invocations do not automatically use the port saved by `make spi-port`. The port can also be configured using the `HEEP_SPI_PORT` environment variable.
+
+### Important considerations
+
+- The ASIC must have a working system clock for memory access. If the Pico provides the clock, enable it using `make programmer-clock-on`.
+- Memory access is performed through the SPI slave interface and does not require the CPU to execute a program.
+- Read and write operations do not automatically reset or halt the CPU. A running application may modify memory concurrently.
+- Writing to memory-mapped registers can immediately affect peripheral or system behavior. Some registers may be read-only, self-clearing, or have side effects.
+- The example address above is illustrative; use an address that is safe to access in the current application.
+
+For larger or automated memory transfers, the Python SDK in `heep_sdk.py` also exposes `read_block()` and `write_block()`.
+
 # Running HEEPidermis from the internal VCO clock
 
 HEEPidermis can operate using **VCOp as its system clock**, removing the need for a continuous external clock. VCOn remains available for skin-conductance sensing, while VCOp can also be monitored as a reference for supply-voltage variations and pseudo-differential measurements.
@@ -113,7 +175,7 @@ HEEPidermis can operate using **VCOp as its system clock**, removing the need fo
 Start with the Raspberry Pi Pico providing the system clock (1 MHz):
 
 ```bash
-make spi-clock-on
+make programmer-clock-on
 make VCO_clock
 make spi-program run
 ```
@@ -128,14 +190,14 @@ Once the VCO output is stable:
 
 ```bash
 make spi-reset
-make spi-clock-off
+make programmer-clock-off
 ```
 
 The SPI CPU-domain reset returns the processor to Boot ROM without resetting the VCO configuration.
 
 **Physically switch** the ASIC clock input from the Pico-generated clock to the VCOp output. The ASIC can now run from its internal oscillator.
 
-**Important:** `spi-clock-off` drives Pico GP21 LOW rather than setting it to high impedance. The Pico clock output must therefore be physically isolated from the VCO clock output to avoid electrical contention.
+**Important:** `programmer-clock-off` drives Pico GP21 LOW rather than setting it to high impedance. The Pico clock output must therefore be physically isolated from the VCO clock output to avoid electrical contention.
 
 **3. Compile and program subsequent applications**
 
