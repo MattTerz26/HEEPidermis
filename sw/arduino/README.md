@@ -94,7 +94,7 @@ CPU reset can also be triggered independently:
 make spi-reset
 ```
 
-This resets the CPU domain through the power-manager registers; it does not power-cycle or reset the entire board.
+This resets the CPU domain through the power-manager registers; it **does not power-cycle** or reset the entire chip. For details on the registers involved and the reset sequence, see [Software-controlled CPU reset](./docs/software-reset.md).
 
 The `no-reset` modifier is available for advanced use:
 
