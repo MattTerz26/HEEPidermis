@@ -33,7 +33,7 @@ def validate_configuration(values, choices, rate_count):
             if name == "dlc_width" and int(number) & (int(number) - 1):
                 raise ValueError("dLC level width must be a power of two")
             result[name] = int(number) if integer else number
-        elif name in ("use_dlc", "compare_dlc", "supply_follow", "motion_enabled"):
+        elif name in ("use_dlc", "compare_dlc", "supply_follow", "motion_enabled", "vco_is_sysclk"):
             if not isinstance(value, bool):
                 raise ValueError(f"{name} must be true or false")
             result[name] = value
@@ -41,7 +41,7 @@ def validate_configuration(values, choices, rate_count):
             if value not in choices[name]:
                 raise ValueError(f"Unknown {name}: {value}")
             result[name] = value
-        elif name == "port":
+        elif name in ("port", "spi_port"):
             if not isinstance(value, str) or not value.strip():
                 raise ValueError("Serial port must be nonempty")
             result[name] = value

@@ -489,10 +489,16 @@ gsr-linker-gen:
 		--outdir $(GSR_LINK_FOLDER) \
 		--linker_script $(GSR_LINK_TEMPLATE)
 
+# Compile an app for SRAM loading through the SPI programmer (make spi-program).
+# Pass CDEFS=VCO_IS_SYSCLK when the ASIC runs from its internal VCOp clock.
+.PHONY: spi_build
+spi_build:
+	$(MAKE) app BOOT_MODE=force LINK_FOLDER=$(LINK_FOLDER) COMPILER_FLAGS="$(COMPILER_FLAGS)"
+
 ifeq ($(PROJECT),gsr/demo)
-jtag_build: gsr-linker-gen
-jtag_build: LINK_FOLDER=$(GSR_LINK_FOLDER)
-jtag_build: COMPILER_FLAGS += -Os
+jtag_build spi_build: gsr-linker-gen
+jtag_build spi_build: LINK_FOLDER=$(GSR_LINK_FOLDER)
+jtag_build spi_build: COMPILER_FLAGS += -Os
 endif
 #COMPILER_FLAGS="-DUART_BAUDRATE=$(UART_BAUD) -DREFERENCE_CLOCK_Hz=$(PLL_FREQ)"
 
