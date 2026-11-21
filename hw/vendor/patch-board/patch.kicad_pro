@@ -76,20 +76,7 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [
-        [
-          "starved_thermal|95644084|58225112|8bf6b377-fe7f-4b63-938d-4782287a482c|8f07521e-bb31-44f8-8563-e4637b7d00f1|F.Cu",
-          ""
-        ],
-        [
-          "starved_thermal|95809819|56127934|8bf6b377-fe7f-4b63-938d-4782287a482c|8f05edf9-752a-4a14-bb8b-a070fed06c25|F.Cu",
-          ""
-        ],
-        [
-          "starved_thermal|97903916|56328888|8bf6b377-fe7f-4b63-938d-4782287a482c|74298d5f-84b0-4ac8-a55f-7df758924d40|F.Cu",
-          ""
-        ]
-      ],
+      "drc_exclusions": [],
       "meta": {
         "version": 2
       },
@@ -826,6 +813,25 @@
         "via_diameter": 0.6,
         "via_drill": 0.3,
         "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.3,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "RF",
+        "pcb_color": "rgb(255, 153, 0)",
+        "priority": 0,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.3,
+        "tuning_profile": "",
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "wire_width": 6
       }
     ],
     "meta": {
@@ -833,7 +839,24 @@
     },
     "net_colors": {},
     "netclass_assignments": {},
-    "netclass_patterns": []
+    "netclass_patterns": [
+      {
+        "netclass": "RF",
+        "pattern": "Net-(Q1-D)"
+      },
+      {
+        "netclass": "RF",
+        "pattern": "Net-(C2-Pad2)"
+      },
+      {
+        "netclass": "RF",
+        "pattern": "Net-(J3-In)"
+      },
+      {
+        "netclass": "RF",
+        "pattern": "Net-(J4-Pin_1)"
+      }
+    ]
   },
   "pcbnew": {
     "last_paths": {
