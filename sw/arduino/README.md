@@ -19,7 +19,8 @@ Flash `heep_programmer.ino` onto the Raspberry Pi Pico using the Arduino IDE. Th
 | GP17 | SPI CS |
 | GP18 | SPI SCK |
 | GP19 | SPI MOSI |
-| GP21 | ASIC system clock output |
+| GP21 | ASIC system clock output (GPOUT0), through R1 of the divider |
+| GP8 | Divider reference (bottom of the divider, via R2): LOW while clocking, high-Z otherwise |
 | GP14 / GP15 / GP13 | Serial / SPI-write / SPI-read activity LEDs |
 
 Connect the signals to the appropriate ASIC board interfaces, ensuring compatible logic levels and a common ground.
@@ -37,7 +38,7 @@ The selected port is saved locally in `sw/arduino/.spi-port`. It can also be ove
 
 ## System clock control
 
-The Pico can generate the ASIC system clock through GPIO21. With `CLOCK_ON_AT_STARTUP=0`, the clock is disabled at startup, and GPIO21 is driven LOW.
+The Pico generates the ASIC system clock through GPIO21 and a resistive divider (see below). With `CLOCK_ON_AT_STARTUP=0`, the clock is disabled at startup and both GP21 and GP8 are high-Z.
 
 ```bash
 make programmer-clock-status
@@ -45,6 +46,31 @@ make programmer-clock-set CLK_FREQ=1000000
 make programmer-clock-on
 make programmer-clock-off
 ```
+
+### Divider circuit
+
+The VCOp output reaches the ASIC CLK pin through 470 Ω on the flex PCB (passive only). Its idle level at power-up is unknown (about LDO_VOUT ≈ 0.8 V seen, possibly 0 V), so the external clock must actively drive **both** edges:
+
+```text
+                    R1 330 Ω
+ GP21 (GPOUT0) ────/\/\/\────┐
+                              ├──── node ──── cable ──── ASIC CLK
+ GP8 (LOW)  ────/\/\/\────────┘                          (VCOp -470 Ω-> CLK on the flex)
+                    R2 82 Ω
+```
+
+With GP8 LOW the node swings 0 ↔ about `3.3 V · R2/(R1+R2)` ≈ 0.66 V (unloaded) behind a Thévenin resistance of about 66 Ω (R1‖R2). Both pins use 12 mA drive strength (GP21 with fast slew).
+
+- **Clock on:** GP8 is driven LOW first, then GPOUT0 is routed to GP21.
+- **Clock off:** GPOUT0 is stopped, then **both GP21 and GP8 become high-Z inputs with no pulls**. Either pin left as an output (even LOW) would load the VCO output through R1/R2, so once the VCO takes over it only sees the cable capacitance.
+
+#### Checking the node level
+
+The resistors are fixed (no trimmer), so the high level is set by R1/R2. To check it, with the cable **UNPLUGGED**:
+
+1. `make programmer-clock-on`.
+2. Scope the node: it should swing 0 ↔ about 0.66 V, at or slightly below LDO_VOUT. To change the level, change R1 or R2.
+3. `make programmer-clock-off` (both pins back to high-Z).
 
 The frequency is expressed in Hz. By default, frequency changes are prohibited while the clock is running. This behavior is controlled by `ALLOW_LIVE_CLOCK_FREQUENCY_CHANGE` in the Arduino firmware.
 

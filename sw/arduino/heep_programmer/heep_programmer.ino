@@ -5,7 +5,9 @@
 
 // HEEPidermis Raspberry Pi Pico programmer and clock source.
 // PC protocol: X reset; W/R + <u32 LE address> + <u16 LE length> [+ W data];
-// C1 clock on; C0 clock off; C? status; CF + <u32 LE Hz> set frequency.
+// C1 clock on; C0 clock off; CF + <u32 LE Hz> set frequency;
+// C? status;
+// V enable VCOp, verify, then clock off.
 
 #define PIN_MISO 16
 #define PIN_CS 17
@@ -17,6 +19,9 @@
 #define PIN_LED_SPI_READ 15
 
 #define PIN_ASIC_CLK 21  // GPIO21 = GPOUT0
+// Clock output is a resistive divider: GP21 -R1- node -R2- GP8. GP8 is the
+// bottom of the divider: LOW while clocking, high-Z (no pulls) otherwise.
+#define PIN_ASIC_CLK_REF 8
 
 #define SPI_FREQ 100000u
 #define MAX_DATA 512u
@@ -114,11 +119,26 @@ bool readExact(uint8_t *dst, uint16_t length, uint32_t timeoutMs) {
 }
 
 // Clock output uses the same RP2040 GPOUT0 implementation as test_pico_clock.
+// Input, no pulls, output latch LOW. Direction is cleared before the function
+// changes so the pin is never driven while being re-muxed.
+void gpioHighZ(uint8_t pin) {
+  gpio_set_dir(pin, GPIO_IN);
+  gpio_put(pin, 0);
+  gpio_set_function(pin, GPIO_FUNC_SIO);
+  gpio_disable_pulls(pin);
+}
+// 12 mA drive on both divider pins, fast slew on the clock pin.
+void clockApplyPadConfig() {
+  gpio_set_drive_strength(PIN_ASIC_CLK, GPIO_DRIVE_STRENGTH_12MA);
+  gpio_set_drive_strength(PIN_ASIC_CLK_REF, GPIO_DRIVE_STRENGTH_12MA);
+  gpio_set_slew_rate(PIN_ASIC_CLK, GPIO_SLEW_RATE_FAST);
+}
+
+// Off: GP21 and GP8 both high-Z with no pulls, never outputs.
 void clockOff() {
   clock_stop(clk_gpout0);
-  gpio_set_function(PIN_ASIC_CLK, GPIO_FUNC_SIO);
-  gpio_set_dir(PIN_ASIC_CLK, GPIO_OUT);
-  gpio_put(PIN_ASIC_CLK, 0);
+  gpioHighZ(PIN_ASIC_CLK);
+  gpioHighZ(PIN_ASIC_CLK_REF);
   clockEnabled = false;
 }
 bool clockApply(uint32_t hz) {
@@ -137,7 +157,14 @@ bool clockApply(uint32_t hz) {
 }
 bool clockOn() {
   if (clockEnabled) return true;
-  if (!clockApply(requestedClockHz)) return false;
+  // Bottom of the divider LOW first, then route GPOUT0 to GP21.
+  gpio_put(PIN_ASIC_CLK_REF, 0);
+  gpio_set_function(PIN_ASIC_CLK_REF, GPIO_FUNC_SIO);
+  gpio_set_dir(PIN_ASIC_CLK_REF, GPIO_OUT);
+  if (!clockApply(requestedClockHz)) {
+    clockOff();
+    return false;
+  }
   clockEnabled = true;
   return true;
 }
@@ -170,6 +197,9 @@ static constexpr uint32_t PM_MONITOR_POWER_GATE_CORE = PM_BASE + 0x8Cu;
 static constexpr uint32_t PM_CPU_RESET_ASSERT = PM_BASE + 0xA4u;
 static constexpr uint32_t PM_CPU_RESET_DEASSERT = PM_BASE + 0xA8u;
 static constexpr uint32_t CPU_RST_N_MASK = 1u << 2;
+// config/cheep_configs.hjson: AO external peripherals + VCO decoder + ENABLE.
+static constexpr uint32_t VCO_ENABLE = 0x20070000u + 0x1000u + 0x0Cu;
+static constexpr uint32_t VCOP_ENABLE_MASK = 1u << 0;
 
 bool heepWrite(uint32_t address, const uint8_t *data, uint16_t length) {
   if (!length || (address & 3u)) return false;
@@ -250,6 +280,17 @@ bool heepResetCpuToBootRom() {
   if (!heepWriteWord(PM_CPU_RESET_DEASSERT, 0u)) return false;
   return true;
 }
+// Keep the CPU in Boot ROM: firmware could race this read-modify-write.
+// An enabled VCOp is never toggled. The clock stays on if verification fails.
+bool heepEnableVcopAndStopClock(uint32_t &readback) {
+  uint32_t before = heepReadWord(VCO_ENABLE);
+  uint32_t expected = before | VCOP_ENABLE_MASK;
+  if (expected != before && !heepWriteWord(VCO_ENABLE, expected)) return false;
+  readback = heepReadWord(VCO_ENABLE);
+  if (readback != expected) return false;
+  clockOff();
+  return true;
+}
 
 void handleClockCommand() {
   uint8_t op;
@@ -294,7 +335,8 @@ void setup() {
   digitalWrite(PIN_LED_SPI_READ, LOW);
   pinMode(PIN_CS, OUTPUT);
   digitalWrite(PIN_CS, HIGH);
-  clockOff();
+  clockApplyPadConfig();
+  clockOff();  // GP21 and GP8 high-Z.
   spi.begin();
 #if CLOCK_ON_AT_STARTUP
   // If this fails, leave GPOUT disabled; host can inspect with C?.
@@ -320,6 +362,15 @@ void loop() {
     Serial.read();
     markActivity(serialLed);
     handleClockCommand();
+    return;
+  }
+  if (command == 'V') {
+    Serial.read();
+    markActivity(serialLed);
+    uint32_t readback = 0;
+    bool ok = heepEnableVcopAndStopClock(readback);
+    Serial.print(ok ? "OK VCO " : "ERR_VCO ");
+    Serial.println(readback, HEX);
     return;
   }
   // Preserve the pre-existing binary protocol for W and R.
