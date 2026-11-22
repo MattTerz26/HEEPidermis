@@ -206,21 +206,17 @@ make spi-reset
 make VCO_clock
 ```
 
-`make VCO_clock` enables VCOp directly through SPI and verifies the ENABLE register at `0x2007100C`. It preserves VCOn and leaves an already enabled VCOp running without toggling it. No initialization application is compiled, uploaded, or executed. Keep the CPU in Boot ROM during this operation to avoid concurrent register changes. Register readback confirms the enable setting; check the physical VCO output before switching clocks.
+`make VCO_clock` enables VCOp directly through SPI and verifies the ENABLE register at `0x2007100C`. It preserves VCOn and leaves an already enabled VCOp running without toggling it. No initialization application is compiled, uploaded, or executed. Keep the CPU in Boot ROM during this operation to avoid concurrent register changes. If the readback succeeds, the Pico firmware turns its clock off immediately, as part of the same command; if it fails, the clock stays on. Readback confirms the enable setting, not that the VCO is oscillating, and there is no pause to check the VCO output first. If the ASIC stops responding, restore the external clock with `make programmer-clock-on`.
 
 **2. Switch to the VCO clock**
 
-Once the VCO output is stable:
+The Pico clock is already off after `make VCO_clock`. The CPU is already waiting in Boot ROM from step 1. CPU-domain resets preserve the VCO configuration.
 
-```bash
-make programmer-clock-off
-```
+**Handover:** no physical switching is needed. Sequence: `make programmer-clock-on` → `make VCO_clock` → `make programmer-clock-off` (VCO_clock already stops the clock on success; this is a harmless explicit step and the fallback if you stop manually) → both GP21 and GP8 are high-Z, VCOp drives CLK alone → `make spi-reset` (CPU-domain reset, now clocked by the VCO).
 
-The CPU is already waiting in Boot ROM from step 1. CPU-domain resets preserve the VCO configuration.
-
-**Physically switch** the ASIC clock input from the Pico-generated clock to the VCOp output. The ASIC can now run from its internal oscillator.
-
-**Important:** `programmer-clock-off` drives Pico GP21 LOW rather than setting it to high impedance. The Pico clock output must therefore be physically isolated from the VCO clock output to avoid electrical contention.
+**Warnings:**
+- Do not leave the cable plugged into an unpowered Pico: the Pico pins then cannot stay high-Z and would load or clamp the VCO output.
+- The off state is **high-Z, not LOW**. The CLK node is undefined unless the VCO drives it.
 
 **3. Compile and program subsequent applications**
 

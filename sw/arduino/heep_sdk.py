@@ -8,6 +8,7 @@ Firmware protocol (USB CDC, 115200 baud):
   C0                   clock off              -> OK CLK OFF
   C?                   clock status           -> CLK ON|OFF <Hz> Hz
   CF + <u32 LE>        configure clock        -> OK CLK SET <Hz> Hz / ERR...
+  V                    enable VCOp, clock off -> OK VCO <hex> / ERR_VCO <hex>
 
 Frequency changes while clock is on are rejected by firmware unless its
 ALLOW_LIVE_CLOCK_FREQUENCY_CHANGE compile-time flag is enabled. The SDK never
@@ -290,23 +291,20 @@ class HEEPidermis:
         self._expect(b"X", b"OK", "reset_cpu_to_bootrom")
 
     def enable_vcop(self) -> int:
-        """Enable VCOp over SPI and verify ENABLE; requires a working ASIC clock.
+        """Enable VCOp over SPI, verify ENABLE, then stop the Pico clock.
 
-        Call with the CPU waiting in Boot ROM so firmware cannot race the
-        read-modify-write. Does not reset the CPU or switch clock sources.
-        An already enabled oscillator is never toggled off.
+        Requires a working ASIC clock and the CPU waiting in Boot ROM so
+        firmware cannot race the read-modify-write. The Pico firmware performs
+        the read-modify-write and readback; it turns its clock off only if the
+        readback matches (an ERR_VCO reply leaves the clock on). An already
+        enabled oscillator is never toggled off. Returns the ENABLE readback.
         """
-        before = self.read_u32(VCO_ENABLE)
-        expected = before | VCOP_ENABLE_MASK
-        if expected != before:
-            self.write_u32(VCO_ENABLE, expected)
-        actual = self.read_u32(VCO_ENABLE)
-        if actual != expected:
-            raise PicoProtocolError(
-                f"VCOp ENABLE verification failed at 0x{VCO_ENABLE:08X}: "
-                f"expected 0x{expected:08X}, read 0x{actual:08X}"
-            )
-        return actual
+        self._send(b"V")
+        reply = self._response_line("enable_vcop")  # ERR_VCO raises here.
+        match = re.fullmatch(rb"OK VCO ([0-9A-Fa-f]+)", reply)
+        if not match:
+            raise PicoProtocolError(f"Invalid VCO enable response: {reply!r}")
+        return int(match.group(1), 16)
 
     def reset(self) -> None:
         """Alias for reset_cpu_to_bootrom()."""

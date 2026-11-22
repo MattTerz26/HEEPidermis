@@ -35,13 +35,13 @@ def build_parser():
     clock = commands.add_parser("clock", help="Control the Pico GPIO21 ASIC clock")
     clock_actions = clock.add_subparsers(dest="clock_action", required=True)
     clock_actions.add_parser("on", help="Enable clock")
-    clock_actions.add_parser("off", help="Disable clock and drive GPIO21 LOW")
+    clock_actions.add_parser("off", help="Disable clock (GPIO21 and GPIO8 high-Z)")
     clock_actions.add_parser("status", help="Show current clock status")
     freq_cmd = clock_actions.add_parser("set", help="Set clock frequency in Hz (normally only when OFF)")
     freq_cmd.add_argument("hz", type=int)
 
     commands.add_parser("reset", help="Reset ASIC CPU domain to Boot ROM")
-    commands.add_parser("vco-enable", help="Enable VCOp over SPI and verify (CPU must be in Boot ROM)")
+    commands.add_parser("vco-enable", help="Enable VCOp over SPI, verify, then stop the Pico clock (CPU must be in Boot ROM)")
 
     program = commands.add_parser("program", help="Program a RISC-V ELF into SRAM")
     program.add_argument("elf", nargs="?", type=Path, default=DEFAULT_ELF,
@@ -81,7 +81,7 @@ def execute(args):
                 print(f"ASIC clock configured to {actual} Hz")
         elif args.command == "vco-enable":
             value = heep.enable_vcop()
-            print(f"VCOp enabled; ENABLE readback: 0x{value:08X}")
+            print(f"VCOp enabled; ENABLE readback: 0x{value:08X}; Pico clock off")
         elif args.command == "reset":
             heep.reset()
             print("CPU reset to Boot ROM")

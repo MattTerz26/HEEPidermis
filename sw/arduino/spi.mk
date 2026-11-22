@@ -21,7 +21,7 @@ CLK_FREQ ?= 1000000
 SPI_ELF ?= $(ROOT_DIR)/sw/build/main.elf
 
 ## Enable VCOp directly through SPI; external clock required, CPU in Boot ROM.
-## Verifies register readback; does not load firmware or switch clock sources.
+## Pico firmware verifies readback, then stops its clock. Does not load firmware.
 .PHONY: VCO_clock
 VCO_clock:
 	$(SPI_PYTHON) $(SPI_CLI) --port "$(SPI_PORT)" vco-enable
@@ -55,7 +55,7 @@ programmer-clock-status:
 programmer-clock-on:
 	$(SPI_PYTHON) $(SPI_CLI) --port "$(SPI_PORT)" clock on
 
-## Turn ASIC clock off and drive GPIO21 LOW.
+## Turn ASIC clock off (GPIO21 and GPIO8 high-Z).
 programmer-clock-off:
 	$(SPI_PYTHON) $(SPI_CLI) --port "$(SPI_PORT)" clock off
 
