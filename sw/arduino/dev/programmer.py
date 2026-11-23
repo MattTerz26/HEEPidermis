@@ -35,7 +35,7 @@ def align_down(value, alignment):
     return value & ~(alignment - 1)
 
 
-def align_up(value, alignment):
+def align_up(value, alignment): 
     return (value + alignment - 1) & ~(alignment - 1)
 
 
