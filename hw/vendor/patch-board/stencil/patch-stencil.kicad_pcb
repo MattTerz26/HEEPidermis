@@ -3444,4 +3444,70 @@
 		)
 	)
 	(embedded_fonts no)
+	(footprint "stencil:D5_paste"
+		(layer "F.Cu")
+		(uuid "d1f3e6bc-286a-42bc-8be1-78f19ba4c460")
+		(at 118.5 77.6 90)
+		(property "Reference" "D5"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "62f4cfe0-7504-4ad4-8928-a11af82555b7")
+			(effects
+				(font
+					(size 0.5 0.5)
+					(thickness 0.08)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 0 0 90)
+			(layer "F.Fab")
+			(uuid "fd511142-0f5b-4ddd-a18a-15e536d00ce4")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 90)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "c04675a2-88a0-4d23-be68-f519329d2549")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 90)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "bb3ca198-010f-42cb-804e-ca298b48c15b")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(attr smd board_only exclude_from_pos_files exclude_from_bom)
+		(duplicate_pad_numbers_are_jumpers no)
+		(pad "" smd roundrect
+			(at -0.787501 0 90)
+			(size 0.875 0.95)
+			(layers "F.Paste")
+			(roundrect_rratio 0.25)
+			(uuid "deee7d95-c20a-4bee-9c71-623c149f234f")
+		)
+		(pad "" smd roundrect
+			(at 0.787501 0 90)
+			(size 0.875 0.95)
+			(layers "F.Paste")
+			(roundrect_rratio 0.25)
+			(uuid "a4865ba9-2860-4a2f-b0e9-5fa513f0336b")
+		)
+		(embedded_fonts no)
+	)
 )

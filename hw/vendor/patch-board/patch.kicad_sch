@@ -18836,7 +18836,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10u"
+		(property "Value" "10n C0G"
 			(at 259.334 151.384 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18880,7 +18880,7 @@
 				)
 			)
 		)
-		(property "Digikey Part Number" "399-9158-1-ND"
+		(property "Digikey Part Number" ""
 			(at 257.81 152.4 0)
 			(hide yes)
 			(show_name no)
@@ -18891,7 +18891,7 @@
 				)
 			)
 		)
-		(property "Mouser Part Number" "80-C0805C104Z3V"
+		(property "Mouser Part Number" ""
 			(at 257.81 152.4 0)
 			(hide yes)
 			(show_name no)
@@ -18902,7 +18902,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C30926"
+		(property "LCSC" ""
 			(at 259.08 157.48 0)
 			(hide yes)
 			(show_name no)
@@ -21847,6 +21847,188 @@
 				)
 			)
 		)
+	)
+	(symbol
+		(lib_id "Device:LED")
+		(at 220.98 166.37 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "52668c0e-c736-48aa-acd5-85e94ea9104f")
+		(property "Reference" "D5"
+			(at 223.52 165.1 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "LED red (VBAT clamp)"
+			(at 223.52 167.64 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "LED_SMD:LED_0603_1608Metric"
+			(at 220.98 166.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 207.01 25.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Light emitting diode"
+			(at 207.01 25.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "bbf04748-491a-4225-8a97-7ada21185c80")
+		)
+		(pin "2"
+			(uuid "d8e74650-9a54-47f4-a66c-c0ee41ccd5d7")
+		)
+		(instances
+			(project "patch"
+				(path "/3aa5b069-cd8a-454c-b0f9-98fe40d88006"
+					(reference "D5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 220.98 170.18 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "00a8bdc8-d287-4e41-9435-730ce25fc5c7")
+		(property "Reference" "#PWR031"
+			(at 220.98 176.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 220.98 174.24 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 248.92 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 248.92 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 248.92 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "966adc9f-2167-45cb-93af-c23c833830a8")
+		)
+		(instances
+			(project "patch"
+				(path "/3aa5b069-cd8a-454c-b0f9-98fe40d88006"
+					(reference "#PWR031")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(label "LDO_VBAT"
+		(at 220.98 162.56 90)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a6be043d-392b-42d4-94e4-3142640cbfd5")
+	)
+	(text "VBAT clamp: conducts only above ~1.7 V\n(coil powered with no battery)"
+		(exclude_from_sim no)
+		(at 224.79 173.99 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "783329fa-cfb6-4e06-8c39-8356987fd210")
 	)
 	(sheet_instances
 		(path "/"
