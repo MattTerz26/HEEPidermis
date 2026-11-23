@@ -1,0 +1,5 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "programmer") (type "KiCad") (uri "${KIPRJMOD}/programmer.pretty") (options "") (descr "HEEPidermis programmer footprints"))
+	(lib (name "libs") (type "KiCad") (uri "${KIPRJMOD}/../patch-board/libs.pretty") (options "") (descr "patch-board shared footprints (logos)"))
+)
